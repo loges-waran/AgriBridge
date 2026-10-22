@@ -62,6 +62,22 @@ export default async function InvestorDashboardPage() {
           </Link>
         </div>
 
+        {/* Hero banner */}
+        <div className="relative rounded-xl overflow-hidden my-6 h-36 sm:h-44">
+          <img
+            src="/images/agribridge/02-funding-and-investment/green-investment-growth.jpg"
+            alt="Agri-investor portal and sustainable crop cycle capital in Tamil Nadu"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/85 via-[#24593c]/50 to-transparent flex flex-col justify-center px-6">
+            <p className="text-white font-bold text-lg">Milestone-Governed Cultivation Capital</p>
+            <p className="text-emerald-100 text-xs mt-1 max-w-sm">
+              Deploy capital directly with verified Tamil Nadu farmers. Track milestones, verified field receipts, and net harvest revenue settlement.
+            </p>
+          </div>
+        </div>
+
         {/* Regulatory Disclosure Banner */}
         <div className="my-6 p-4 rounded-lg bg-amber-50 border border-amber-200 flex items-start gap-3 text-xs text-amber-900">
           <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
@@ -108,14 +124,23 @@ export default async function InvestorDashboardPage() {
                 key={prop.id}
                 className="p-5 rounded-lg border border-stone-200 bg-white hover:border-[#24593c] transition-colors"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <div>
-                    <h4 className="text-base font-bold text-stone-900">{prop.title}</h4>
-                    <p className="text-xs text-stone-500">
-                      Farmer: {prop.project.farmer.fullName.split("[")[0]} • Location:{" "}
-                      {prop.project.farm?.district || prop.project.farmer.district} (
-                      {prop.project.acresAllotted} Acres {prop.project.cropName})
-                    </p>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-stone-200 shrink-0 bg-stone-100">
+                      <img
+                        src="/images/agribridge/02-funding-and-investment/farmer-funding-growth.jpg"
+                        alt="Farm project funding"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h4 className="text-base font-bold text-stone-900">{prop.title}</h4>
+                      <p className="text-xs text-stone-500">
+                        Farmer: {prop.project.farmer.fullName.split("[")[0]} • Location:{" "}
+                        {prop.project.farm?.district || prop.project.farmer.district} (
+                        {prop.project.acresAllotted} Acres {prop.project.cropName})
+                      </p>
+                    </div>
                   </div>
                   <Badge variant="verified">
                     {prop.partnershipType === "PROFIT_SHARE"

@@ -14,9 +14,11 @@ import {
   ShieldCheck,
   AlertCircle,
   Plus,
+  MapPin,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { StatCard } from "@/components/ui/StatCard";
+import { getCropImage, getResourceImage } from "@/lib/imageMap";
 
 export const dynamic = "force-dynamic";
 
@@ -47,38 +49,53 @@ export default async function ProjectWorkspacePage({
 
   const totalSpent = project.expenses.reduce((acc, e) => acc + e.amount, 0);
   const openGaps = project.resourceGaps.filter((g) => g.status === "OPEN");
+  const cropImg = getCropImage(project.cropName);
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Workspace Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-stone-200 gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-stone-900">{project.title}</h1>
-              <Badge variant={project.status === "READY_TO_START" ? "verified" : "open"}>
-                {project.status}
-              </Badge>
-            </div>
-            <p className="text-xs text-stone-500 mt-1">
-              Farmer: {project.farmer.fullName.split("[")[0]} • Location:{" "}
-              {project.farm?.locationName || project.farmer.district} ({project.acresAllotted} Acres {project.cropName})
-            </p>
-          </div>
+        {/* Workspace Hero Banner with Crop Photo */}
+        <div className="relative rounded-xl overflow-hidden mb-6 h-44 sm:h-52">
+          <img
+            src={cropImg.src}
+            alt={cropImg.alt}
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-[#24593c]/60 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-end p-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white drop-shadow">{project.title}</h1>
+                  <Badge variant={project.status === "READY_TO_START" ? "verified" : "open"}>
+                    {project.status}
+                  </Badge>
+                </div>
+                <p className="text-xs text-emerald-100 flex items-center gap-1.5 flex-wrap">
+                  <span>Farmer: <strong>{project.farmer.fullName.split("[")[0]}</strong></span>
+                  <span>•</span>
+                  <span>Location: <strong>{project.farm?.locationName || project.farmer.district}</strong></span>
+                  <span>•</span>
+                  <span>{project.acresAllotted} Acres {project.cropName} ({project.season} Season)</span>
+                </p>
+              </div>
 
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/projects/${project.id}/matches`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-amber-700 text-white font-medium text-xs hover:bg-amber-800 transition-colors shadow-2xs"
-            >
-              <span>Run Resource Gap Matching</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href={`/projects/${project.id}/matches`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-amber-600 text-white font-medium text-xs hover:bg-amber-700 transition-colors shadow"
+                >
+                  <span>Run Resource Gap Matching</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Project Metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard
             label="Estimated Budget"
             value={`₹${(project.estimatedBudget || 145000).toLocaleString()}`}
@@ -127,38 +144,52 @@ export default async function ProjectWorkspacePage({
               </div>
 
               <div className="space-y-3">
-                {project.resourceGaps.map((gap) => (
-                  <div
-                    key={gap.id}
-                    className="p-3 bg-stone-50 rounded-lg border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-stone-900">{gap.title}</span>
-                        <Badge variant={gap.status === "OPEN" ? "urgent" : "verified"}>
-                          {gap.status}
-                        </Badge>
-                      </div>
-                      <p className="text-stone-500 text-[11px]">
-                        Category: <strong>{gap.category}</strong> • Quantity:{" "}
-                        <strong>{gap.quantityNeeded ? `${gap.quantityNeeded} ${gap.unit || ''}` : "Standard Requirement"}</strong>
-                      </p>
-                      {gap.notes && (
-                        <p className="text-stone-600 text-[11px] mt-1 bg-white p-1.5 rounded border border-stone-100">
-                          {gap.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    <Link
-                      href={`/projects/${project.id}/matches`}
-                      className="inline-flex items-center gap-1 font-semibold text-[#24593c] hover:underline shrink-0"
+                {project.resourceGaps.map((gap) => {
+                  const resImg = getResourceImage(gap.category);
+                  return (
+                    <div
+                      key={gap.id}
+                      className="p-3 bg-stone-50 rounded-lg border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                     >
-                      <span>Find Partner</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                ))}
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden border border-stone-200 shrink-0 bg-stone-100 mt-0.5">
+                          <img
+                            src={resImg.src}
+                            alt={resImg.alt}
+                            loading="lazy"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-stone-900">{gap.title}</span>
+                            <Badge variant={gap.status === "OPEN" ? "urgent" : "verified"}>
+                              {gap.status}
+                            </Badge>
+                          </div>
+                          <p className="text-stone-500 text-[11px]">
+                            Category: <strong>{gap.category}</strong> • Quantity:{" "}
+                            <strong>{gap.quantityNeeded ? `${gap.quantityNeeded} ${gap.unit || ''}` : "Standard Requirement"}</strong>
+                          </p>
+                          {gap.notes && (
+                            <p className="text-stone-600 text-[11px] mt-1 bg-white p-1.5 rounded border border-stone-100">
+                              {gap.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/projects/${project.id}/matches`}
+                        className="inline-flex items-center gap-1 font-semibold text-[#24593c] hover:underline shrink-0"
+                      >
+                        <span>Find Partner</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -203,31 +234,46 @@ export default async function ProjectWorkspacePage({
 
           {/* Right Column: Financials & Field Data */}
           <div className="space-y-6">
-            {/* Plot Specifications */}
-            <div className="agri-card p-5 text-xs">
-              <h3 className="text-sm font-bold text-stone-900 pb-3 border-b border-stone-100 mb-3">
-                Farm Parcel Specifications
-              </h3>
-              <div className="space-y-2 text-stone-600">
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Total Project Area:</span>
-                  <strong className="text-stone-900">{project.acresAllotted} Acres</strong>
+            {/* Plot Specifications with Land Visual */}
+            <div className="agri-card overflow-hidden text-xs">
+              <div className="relative h-28 overflow-hidden">
+                <img
+                  src="/images/agribridge/01-farm-projects/monsoon-ploughing.jpg"
+                  alt="Farm parcel land preparation and monsoon ploughing in Tamil Nadu"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-3">
+                  <span className="text-white font-bold text-xs drop-shadow">
+                    Parcel: {project.farm?.name || "Main Cultivation Block"}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Soil Type:</span>
-                  <strong className="text-stone-900">{project.farm?.soilType || "Clay Loam"}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Water Irrigation:</span>
-                  <strong className="text-stone-900">{project.farm?.waterSource || "Borewell + Canal"}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Power Source:</span>
-                  <strong className="text-stone-900">{project.farm?.powerSource || "3-Phase Grid"}</strong>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-stone-400">Organic Farming:</span>
-                  <strong className="text-emerald-800">{project.farm?.isOrganic ? "Certified Organic" : "Conventional / Transitional"}</strong>
+              </div>
+
+              <div className="p-5">
+                <h3 className="text-sm font-bold text-stone-900 pb-2 border-b border-stone-100 mb-3">
+                  Farm Parcel Specifications
+                </h3>
+                <div className="space-y-2 text-stone-600">
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Total Project Area:</span>
+                    <strong className="text-stone-900">{project.acresAllotted} Acres</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Soil Type:</span>
+                    <strong className="text-stone-900">{project.farm?.soilType || "Clay Loam"}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Water Irrigation:</span>
+                    <strong className="text-stone-900">{project.farm?.waterSource || "Borewell + Canal"}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Power Source:</span>
+                    <strong className="text-stone-900">{project.farm?.powerSource || "3-Phase Grid"}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Organic Farming:</span>
+                    <strong className="text-emerald-800">{project.farm?.isOrganic ? "Certified Organic" : "Conventional / Transitional"}</strong>
+                  </div>
                 </div>
               </div>
             </div>

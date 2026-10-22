@@ -47,6 +47,22 @@ export default function BudgetCalculatorPage() {
           </p>
         </div>
 
+        {/* Hero banner */}
+        <div className="relative rounded-xl overflow-hidden my-6 h-32 sm:h-40">
+          <img
+            src="/images/agribridge/02-funding-and-investment/investment-market-growth.jpg"
+            alt="Agricultural economics and investment market growth in Tamil Nadu"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/85 via-[#24593c]/50 to-transparent flex flex-col justify-center px-6">
+            <p className="text-white font-bold text-lg">Agronomic Cost &amp; Revenue Projection</p>
+            <p className="text-emerald-100 text-xs mt-1 max-w-sm">
+              Evaluate per-acre operational budgets, sensitivity margins, and projected mandi profit before sowing.
+            </p>
+          </div>
+        </div>
+
         {/* Hypothetical Notice */}
         <div className="my-6 p-3 bg-amber-50 rounded border border-amber-200 text-xs text-amber-900 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />

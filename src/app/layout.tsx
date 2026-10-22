@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { I18nProvider } from "@/lib/i18n/context";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { VoiceAssistantModal } from "@/components/voice/VoiceAssistantModal";
 
 export const metadata: Metadata = {
   title: "AgriBridge — Unified Agriculture Collaboration & Resource Coordination Platform",
@@ -24,6 +25,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
+            <VoiceAssistantModal />
           </I18nProvider>
         </AuthProvider>
       </body>

@@ -1,8 +1,13 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { Sprout, ShieldCheck, HeartHandshake, MapPin } from "lucide-react";
+import { Sprout, ShieldCheck, MapPin } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
 
 export function Footer() {
+  const { t } = useI18n();
+
   return (
     <footer className="bg-stone-900 text-stone-300 mt-auto border-t border-stone-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -13,51 +18,51 @@ export function Footer() {
               <div className="w-8 h-8 rounded bg-emerald-800 flex items-center justify-center text-white">
                 <Sprout className="w-5 h-5" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">AgriBridge</span>
+              <span className="text-xl font-bold tracking-tight text-white">{t.app_title}</span>
             </div>
             <p className="text-xs text-stone-400 leading-relaxed">
-              Unified agriculture collaboration and resource coordination platform connecting Indian farmers with capital, labour, machinery, certified inputs, buyers, and transport.
+              {t.tagline} — connecting Indian farmers with capital, labour, machinery, certified inputs, buyers, and transport.
             </p>
             <div className="flex items-center gap-2 text-xs text-emerald-400 pt-1">
               <ShieldCheck className="w-4 h-4" />
-              <span>Verified Profiles & Aadhaar/Patta KYC</span>
+              <span>{t.status.verified} &amp; Aadhaar/Patta KYC</span>
             </div>
           </div>
 
           {/* Core Modules */}
           <div>
             <h4 className="text-xs font-semibold text-white uppercase tracking-wider mb-3">
-              Platform Modules
+              {t.nav.marketplaces}
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/projects" className="hover:text-white transition-colors">
-                  Farm Project Workspace
+                  {t.nav.projects}
                 </Link>
               </li>
               <li>
                 <Link href="/projects/matches" className="hover:text-white transition-colors">
-                  Resource Gap Matching Engine
+                  {t.nav.gap_engine}
                 </Link>
               </li>
               <li>
                 <Link href="/marketplaces/labour" className="hover:text-white transition-colors">
-                  Agricultural Labour Gangs
+                  {t.marketplaces_menu.labour}
                 </Link>
               </li>
               <li>
                 <Link href="/marketplaces/machinery" className="hover:text-white transition-colors">
-                  Tractor & Drone Rentals
+                  {t.marketplaces_menu.machinery}
                 </Link>
               </li>
               <li>
                 <Link href="/marketplaces/produce" className="hover:text-white transition-colors">
-                  Produce & Mandi Buyers
+                  {t.marketplaces_menu.produce}
                 </Link>
               </li>
               <li>
                 <Link href="/marketplaces/investment" className="hover:text-white transition-colors">
-                  Co-Farming & Investment
+                  {t.marketplaces_menu.investment}
                 </Link>
               </li>
             </ul>

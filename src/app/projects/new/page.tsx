@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n/context";
 import {
   Sprout,
   ArrowRight,
@@ -21,6 +22,7 @@ import { Button } from "@/components/ui/Button";
 export default function NewFarmProjectWizard() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useI18n();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -253,7 +255,7 @@ export default function NewFarmProjectWizard() {
 
             <div className="pt-4 flex justify-end">
               <Button onClick={() => setStep(2)}>
-                Next: Crop & Cultivation Plan →
+                {t.common.next} →
               </Button>
             </div>
           </div>
@@ -332,6 +334,7 @@ export default function NewFarmProjectWizard() {
               </div>
             </div>
 
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
@@ -400,10 +403,10 @@ export default function NewFarmProjectWizard() {
 
             <div className="pt-4 flex justify-between">
               <Button variant="outline" onClick={() => setStep(1)}>
-                ← Back
+                ← {t.common.back}
               </Button>
               <Button onClick={() => setStep(3)}>
-                Next: Available Resources →
+                {t.common.next} →
               </Button>
             </div>
           </div>
@@ -459,10 +462,10 @@ export default function NewFarmProjectWizard() {
 
             <div className="pt-4 flex justify-between">
               <Button variant="outline" onClick={() => setStep(2)}>
-                ← Back
+                ← {t.common.back}
               </Button>
               <Button onClick={() => setStep(4)}>
-                Next: Declare Missing Resource Gaps →
+                {t.common.next} →
               </Button>
             </div>
           </div>
@@ -585,10 +588,10 @@ export default function NewFarmProjectWizard() {
 
             <div className="pt-4 flex justify-between">
               <Button variant="outline" onClick={() => setStep(3)}>
-                ← Back
+                ← {t.common.back}
               </Button>
               <Button onClick={() => setStep(5)}>
-                Next: Project Summary & Submit →
+                {t.common.next} →
               </Button>
             </div>
           </div>
@@ -635,10 +638,10 @@ export default function NewFarmProjectWizard() {
 
             <div className="pt-4 flex justify-between">
               <Button variant="outline" onClick={() => setStep(4)}>
-                ← Back
+                ← {t.common.back}
               </Button>
               <Button loading={loading} onClick={handleSubmit}>
-                Submit Project & Run Matching Engine
+                {t.forms.submit_project}
               </Button>
             </div>
           </div>

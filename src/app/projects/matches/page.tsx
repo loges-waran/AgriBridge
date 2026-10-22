@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Sparkles, ArrowRight, Sprout, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
+import { getProjectCardImage } from "@/lib/imageMap";
 
 export const dynamic = "force-dynamic";
 
@@ -32,25 +33,56 @@ export default async function GlobalMatchingPage() {
           </p>
         </div>
 
+        {/* Hero Banner */}
+        <div className="relative rounded-xl overflow-hidden my-6 h-36 sm:h-44">
+          <img
+            src="/images/agribridge/01-farm-projects/planting-seedlings.jpg"
+            alt="Resource Gap Matching Engine in Tamil Nadu agriculture"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/85 via-[#24593c]/50 to-transparent flex flex-col justify-center px-6">
+            <p className="text-white font-bold text-lg">Cross-Resource Farming Synergy</p>
+            <p className="text-emerald-100 text-xs mt-1 max-w-sm">
+              Discover proximity-ranked labour gangs, 4WD tractors, drone sprayers, certified seeds, and buyers for your cultivation cycle.
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {projects.map((p) => {
             const openGaps = p.resourceGaps.filter((g) => g.status === "OPEN");
+            const cropImg = getProjectCardImage(p.cropName, p.id);
             return (
               <div
                 key={p.id}
-                className="agri-card p-5 flex flex-col justify-between hover:border-[#24593c] transition-colors"
+                className="agri-card flex flex-col justify-between hover:border-[#24593c] transition-colors overflow-hidden"
               >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
+                {/* Crop Photo Header */}
+                <div className="relative h-36 overflow-hidden bg-stone-100">
+                  <img
+                    src={cropImg.src}
+                    alt={cropImg.alt}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                  <div className="absolute bottom-2 left-3 right-3 flex items-center justify-between">
                     <Badge variant={openGaps.length > 0 ? "urgent" : "verified"}>
                       {openGaps.length} Open Gaps
                     </Badge>
-                    <span className="text-xs text-stone-500 font-semibold">{p.season} Season</span>
+                    <span className="text-xs text-white font-semibold bg-black/40 px-2 py-0.5 rounded">
+                      {p.season} Season
+                    </span>
                   </div>
-                  <h3 className="text-base font-bold text-stone-900 mb-1">{p.title}</h3>
-                  <p className="text-xs text-stone-500 mb-3">
-                    Farmer: {p.farmer.fullName.split("[")[0]} • {p.farm?.district || p.farmer.district}
-                  </p>
+                </div>
+
+                <div className="p-5 flex flex-col flex-1 justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-stone-900 mb-1">{p.title}</h3>
+                    <p className="text-xs text-stone-500 mb-3">
+                      Farmer: {p.farmer.fullName.split("[")[0]} • {p.farm?.district || p.farmer.district}
+                    </p>
 
                   <div className="flex flex-wrap gap-1.5 mb-4">
                     {openGaps.map((g) => (
@@ -64,14 +96,15 @@ export default async function GlobalMatchingPage() {
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-stone-100">
-                  <Link
-                    href={`/projects/${p.id}/matches`}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md bg-[#24593c] text-white font-medium text-xs hover:bg-[#1e4731]"
-                  >
-                    <span>Compute Matches</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  <div className="pt-3 border-t border-stone-100">
+                    <Link
+                      href={`/projects/${p.id}/matches`}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-md bg-[#24593c] text-white font-medium text-xs hover:bg-[#1e4731]"
+                    >
+                      <span>Compute Matches</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             );

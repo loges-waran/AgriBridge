@@ -57,6 +57,22 @@ export default async function WorkerDashboardPage() {
           </Link>
         </div>
 
+        {/* Hero banner */}
+        <div className="relative rounded-xl overflow-hidden my-6 h-36 sm:h-44">
+          <img
+            src="/images/agribridge/01-farm-projects/rice-field-workers.jpg"
+            alt="Agricultural workforce and labour gang in Tamil Nadu"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/85 via-[#1e4731]/50 to-transparent flex flex-col justify-center px-6">
+            <p className="text-white font-bold text-lg">Agricultural Labour &amp; Crew Workspace</p>
+            <p className="text-emerald-100 text-xs mt-1 max-w-sm">
+              Discover direct transplanting, weeding, and harvesting bookings with transparent daily wages and verified farm locations.
+            </p>
+          </div>
+        </div>
+
         {/* Worker Profile Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
           <StatCard
@@ -152,9 +168,21 @@ export default async function WorkerDashboardPage() {
           {/* Right Column: Skills & Application History */}
           <div className="space-y-6">
             <div className="agri-card p-5">
-              <h3 className="text-sm font-bold text-stone-900 pb-3 border-b border-stone-100 mb-3">
-                Agronomic Skills & Profile
-              </h3>
+              <div className="flex items-center gap-3 pb-3 border-b border-stone-100 mb-3">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-emerald-500 shrink-0">
+                  <img
+                    src="/images/agribridge/01-farm-projects/tamilnadu-farmer.jpg"
+                    alt="Authentic Tamil Nadu agricultural worker"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-stone-900">
+                    {user.fullName.split("[")[0]}
+                  </h3>
+                  <span className="text-[11px] text-emerald-700 font-medium">Aadhaar KYC Verified Gang Leader</span>
+                </div>
+              </div>
               <p className="text-xs text-stone-600 mb-2 leading-relaxed">
                 <strong>Skills:</strong> {profile?.skills || "Paddy transplanting, weeding, harvest"}
               </p>

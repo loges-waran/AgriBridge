@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useI18n } from "@/lib/i18n/context";
 import {
   Sprout,
   Layers,
@@ -18,6 +19,7 @@ import {
 export function QuickDemoLogin() {
   const router = useRouter();
   const { refreshUser } = useAuth();
+  const { t } = useI18n();
   const [loadingRole, setLoadingRole] = useState<string | null>(null);
 
   const demoRoles = [
@@ -130,7 +132,7 @@ export function QuickDemoLogin() {
             className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-stone-200 bg-stone-50 text-stone-700 transition-all ${item.color} disabled:opacity-50`}
           >
             <Icon className="w-3.5 h-3.5 text-stone-500" />
-            <span>{isLoading ? "Logging in..." : item.label}</span>
+            <span>{isLoading ? t.common.loading : (t.roles[item.role as keyof typeof t.roles] || item.label)}</span>
           </button>
         );
       })}

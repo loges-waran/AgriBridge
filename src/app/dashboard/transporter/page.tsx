@@ -55,6 +55,26 @@ export default async function TransporterDashboardPage() {
           </Link>
         </div>
 
+        {/* Agricultural Hero Section for Logistics Desk */}
+        <div className="relative rounded-xl overflow-hidden mb-6 h-44 sm:h-52">
+          <img
+            src="/images/agribridge/01-farm-projects/kumbakonam-haulage.jpg"
+            alt="Farm-gate harvest collection and rural logistics in Tamil Nadu"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-950/90 via-purple-900/60 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-end p-6">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow">
+                Logistics Dispatch Desk: {user.fullName.split("[")[0]}
+              </h2>
+              <p className="text-xs text-purple-100 mt-1">
+                Base District: {user.district || "Thanjavur"} • Farm-to-Mandi Bulk Grain &amp; Refrigerated Transport
+              </p>
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
           <StatCard
             label="Total Fleet Vehicles"

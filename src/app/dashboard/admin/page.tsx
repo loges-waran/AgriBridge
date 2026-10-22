@@ -74,6 +74,27 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Agricultural Hero Section for Admin Center */}
+        <div className="relative rounded-xl overflow-hidden mb-6 h-40 sm:h-48">
+          <img
+            src="/images/agribridge/01-farm-projects/traditional-farming-silhouette.jpg"
+            alt="AgriBridge ecosystem governance and rural platform management"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-stone-950/90 via-stone-900/60 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-end p-6">
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow">
+                AgriBridge Ecosystem Governance
+              </h2>
+              <p className="text-xs text-stone-200 mt-1 max-w-xl">
+                Real-time oversight across Tamil Nadu agriculture clusters: KYC compliance, transparent dispute adjudication, and marketplace audit logs.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
           <StatCard
             label="Total Platform Users"

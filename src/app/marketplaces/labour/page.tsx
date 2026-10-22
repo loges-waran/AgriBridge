@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Users, Plus, MapPin, Calendar, Clock, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { LabourJobClientActions } from "@/components/marketplaces/LabourJobClientActions";
+import { RESOURCE_IMAGES, getLabourJobImage, getWorkerCrewImage } from "@/lib/imageMap";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function LabourMarketplacePage() {
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#dcf0e2] text-[#1e4731] text-xs font-semibold mb-1">
               <Users className="w-3.5 h-3.5" />
-              <span>Human Capital & Agricultural Workforces</span>
+              <span>Human Capital &amp; Agricultural Workforces</span>
             </div>
             <h1 className="text-2xl font-bold text-stone-900">
               Agricultural Labour Marketplace
@@ -43,6 +44,22 @@ export default async function LabourMarketplacePage() {
           <LabourJobClientActions currentUser={user} />
         </div>
 
+        {/* Hero banner */}
+        <div className="relative rounded-xl overflow-hidden my-6 h-36 sm:h-44">
+          <img
+            src="/images/agribridge/01-farm-projects/rice-field-workers.jpg"
+            alt="Agricultural workforce harvesting crops in Tamil Nadu"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/85 via-[#1e4731]/50 to-transparent flex flex-col justify-center px-6">
+            <p className="text-white font-bold text-lg">Skilled Agricultural Crews</p>
+            <p className="text-emerald-100 text-xs mt-1 max-w-sm">
+              Connect directly with verified gang leaders for transplantation, de-weeding, harvesting, and post-harvest handling.
+            </p>
+          </div>
+        </div>
+
         {/* 1. Open Job Listings */}
         <div className="my-8">
           <div className="flex items-center justify-between mb-4">
@@ -50,7 +67,7 @@ export default async function LabourMarketplacePage() {
               Open Farm Work Opportunities ({jobs.length} Positions)
             </h2>
             <span className="text-xs text-stone-500">
-              Daily & Milestone Agricultural Labor Requirements
+              Daily &amp; Milestone Agricultural Labor Requirements
             </span>
           </div>
 
@@ -68,10 +85,26 @@ export default async function LabourMarketplacePage() {
                     <Badge variant="open">{job.workersNeeded} Workers Needed</Badge>
                   </div>
 
-                  <h3 className="text-base font-bold text-stone-900 mb-1">{job.title}</h3>
-                  <p className="text-xs text-stone-500 mb-3">
-                    Farmer: {job.farmer.fullName.split("[")[0]} • {job.location} ({job.district})
-                  </p>
+                  {(() => {
+                    const jobImg = getLabourJobImage(job.id);
+                    return (
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden border border-stone-200 shrink-0 bg-stone-100">
+                          <img
+                            src={jobImg.src}
+                            alt={jobImg.alt}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-stone-900">{job.title}</h3>
+                          <p className="text-xs text-stone-500">
+                            Farmer: {job.farmer.fullName.split("[")[0]} • {job.district}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   <div className="p-3 bg-stone-50 rounded border border-stone-200 space-y-1 text-xs text-stone-600 mb-4">
                     <div>
@@ -94,15 +127,12 @@ export default async function LabourMarketplacePage() {
                   <span className="text-stone-400">
                     {job.applications.length} Application{job.applications.length !== 1 ? "s" : ""}
                   </span>
-                  <button
-                    disabled={!user}
-                    onClick={() => {
-                      alert(`To apply for '${job.title}', please click 'Apply as Gang Leader' or log in as a Worker.`);
-                    }}
+                  <Link
+                    href="/login"
                     className="font-semibold text-[#24593c] hover:underline"
                   >
                     Apply for Job →
-                  </button>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -116,7 +146,7 @@ export default async function LabourMarketplacePage() {
               Registered Agricultural Labour Gangs ({profiles.length} Verified Crews)
             </h2>
             <span className="text-xs text-stone-500">
-              Direct Contact with Gang Leaders & Experienced Farm Hands
+              Direct Contact with Gang Leaders &amp; Experienced Farm Hands
             </span>
           </div>
 
@@ -124,13 +154,30 @@ export default async function LabourMarketplacePage() {
             {profiles.map((p) => (
               <div
                 key={p.id}
-                className="agri-card p-5 flex flex-col justify-between text-xs"
+                className="agri-card p-5 flex flex-col justify-between text-xs hover:border-[#24593c] transition-colors"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-stone-900 text-sm">
-                      {p.user.fullName.split("[")[0]} (Crew of {p.crewSize})
-                    </span>
+                  <div className="flex items-center justify-between mb-3">
+                  {(() => {
+                    const crewImg = getWorkerCrewImage(p.id);
+                    return (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-emerald-200 shrink-0 bg-emerald-50">
+                          <img
+                            src={crewImg.src}
+                            alt={crewImg.alt}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <span className="font-bold text-stone-900 text-sm block">
+                            {p.user.fullName.split("[")[0]}
+                          </span>
+                          <span className="text-[11px] text-stone-500">Crew of {p.crewSize} Workers</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                     <Badge variant={p.isAvailable ? "verified" : "neutral"}>
                       {p.isAvailable ? "Available" : "Engaged"}
                     </Badge>

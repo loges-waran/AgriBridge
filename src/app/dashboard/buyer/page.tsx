@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ShoppingBag, FileText, Truck, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
+import { getCropImage } from "@/lib/imageMap";
 
 export const dynamic = "force-dynamic";
 
@@ -40,29 +41,44 @@ export default async function BuyerDashboardPage() {
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-stone-200 gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-stone-900">
-                Buyer & Trader Desk: {profile?.businessName || user.fullName.split("[")[0]}
-              </h1>
-              <Badge variant="verified">GST Verified Trader</Badge>
-            </div>
-            <p className="text-xs text-stone-500 mt-1">
-              Location: {profile?.district || user.district || "Madurai"} • Direct Farmer Sourcing & Pre-Harvest Forward Contracts
-            </p>
-          </div>
+        {/* Agricultural Hero Section for Buyer Desk */}
+        <div className="relative rounded-xl overflow-hidden mb-6 h-44 sm:h-52">
+          <img
+            src="/images/resources/produce.jpg"
+            alt="Wholesale produce procurement and mandi aggregator hub"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-900/60 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-end p-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white drop-shadow">
+                    Buyer &amp; Trader Desk: {profile?.businessName || user.fullName.split("[")[0]}
+                  </h1>
+                  <Badge variant="verified">GST Verified Trader</Badge>
+                </div>
+                <p className="text-xs text-emerald-100">
+                  Location: {profile?.district || user.district || "Madurai"} • Direct Farmer Sourcing &amp; Pre-Harvest Forward Contracts
+                </p>
+              </div>
 
-          <Link
-            href="/marketplaces/produce"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#24593c] text-white font-medium text-xs hover:bg-[#1e4731]"
-          >
-            <span>Explore Farm Harvests</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/marketplaces/produce"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-white text-[#24593c] font-medium text-xs hover:bg-emerald-50 transition-colors shadow"
+                >
+                  <span>Explore Farm Harvests</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
+        {/* Metric Summary Tiles */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard
             label="Active Purchase Offers"
             value={myOffers.length}
@@ -77,7 +93,7 @@ export default async function BuyerDashboardPage() {
           />
           <StatCard
             label="Preferred Crops"
-            value="Paddy & Turmeric"
+            value="Paddy &amp; Turmeric"
             subtext="Delta Fine Grains"
             icon={CheckCircle2}
           />
@@ -104,40 +120,58 @@ export default async function BuyerDashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {availableListings.map((l) => (
-              <div
-                key={l.id}
-                className="p-4 rounded-lg border border-stone-200 bg-white hover:border-[#24593c] transition-colors flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge variant={l.grade === "ORGANIC_CERTIFIED" ? "verified" : "neutral"}>
-                      {l.grade}
-                    </Badge>
-                    <span className="text-xs font-bold text-[#24593c]">₹{l.askingPricePerKg}/kg</span>
+            {availableListings.map((l) => {
+              const cropImg = getCropImage(l.cropName);
+              return (
+                <div
+                  key={l.id}
+                  className="rounded-lg border border-stone-200 bg-white hover:border-[#24593c] transition-colors flex flex-col justify-between overflow-hidden text-xs"
+                >
+                  {/* Crop Image Header */}
+                  <div className="relative h-28 overflow-hidden bg-stone-100">
+                    <img
+                      src={cropImg.src}
+                      alt={cropImg.alt}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+                    <div className="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between">
+                      <Badge variant={l.grade === "ORGANIC_CERTIFIED" ? "verified" : "neutral"}>
+                        {l.grade}
+                      </Badge>
+                      <span className="text-xs font-bold text-white bg-black/40 px-2 py-0.5 rounded">
+                        ₹{l.askingPricePerKg}/kg
+                      </span>
+                    </div>
                   </div>
-                  <h4 className="text-sm font-bold text-stone-900">{l.cropName}</h4>
-                  <p className="text-xs text-stone-500 mb-2">
-                    Variety: {l.variety || "Standard"} • Total: {l.quantityKg.toLocaleString()} kg
-                  </p>
-                  <p className="text-[11px] text-stone-400">
-                    Farmer: {l.farmer.fullName.split("[")[0]} ({l.locationDistrict})
-                  </p>
-                </div>
 
-                <div className="mt-4 pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
-                  <span className="text-stone-400 text-[11px]">
-                    Harvest: {new Date(l.expectedHarvestDate).toLocaleDateString()}
-                  </span>
-                  <Link
-                    href="/marketplaces/produce"
-                    className="font-semibold text-[#24593c] hover:underline"
-                  >
-                    Make Offer →
-                  </Link>
+                  <div className="p-4 flex flex-col flex-1 justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-stone-900 mb-1">{l.cropName}</h4>
+                      <p className="text-xs text-stone-500 mb-1">
+                        Variety: {l.variety || "Standard"} • Total: {l.quantityKg.toLocaleString()} kg
+                      </p>
+                      <p className="text-[11px] text-stone-400">
+                        Farmer: {l.farmer.fullName.split("[")[0]} ({l.locationDistrict})
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                      <span className="text-stone-400 text-[11px]">
+                        Harvest: {new Date(l.expectedHarvestDate).toLocaleDateString()}
+                      </span>
+                      <Link
+                        href="/marketplaces/produce"
+                        className="font-semibold text-[#24593c] hover:underline"
+                      >
+                        Make Offer →
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

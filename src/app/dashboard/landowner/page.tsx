@@ -53,6 +53,22 @@ export default async function LandownerDashboardPage() {
           </Link>
         </div>
 
+        {/* Hero banner */}
+        <div className="relative rounded-xl overflow-hidden my-6 h-36 sm:h-44">
+          <img
+            src="/images/agribridge/01-farm-projects/traditional-ox-ploughing.jpg"
+            alt="Traditional farming and arable land stewardship in Tamil Nadu"
+            loading="eager"
+            className="w-full h-full object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/85 via-[#24593c]/50 to-transparent flex flex-col justify-center px-6">
+            <p className="text-white font-bold text-lg">Farmland Ownership &amp; Stewardship</p>
+            <p className="text-emerald-100 text-xs mt-1 max-w-sm">
+              Connect with verified cultivators, protect your Patta title rights, and track soil fertility milestones with transparent lease accounting.
+            </p>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-6">
           <StatCard
             label="Total Acreage"
