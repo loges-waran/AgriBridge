@@ -8,16 +8,21 @@ import { getCropImage, FUNDING_AND_INVESTMENT_IMAGES } from "@/lib/imageMap";
 export const dynamic = "force-dynamic";
 
 export default async function InvestmentMarketplacePage() {
-  const proposals = await prisma.investmentProposal.findMany({
-    where: { status: "ACTIVE" },
-    include: {
-      project: {
-        include: { farmer: true, farm: true, milestones: true },
+  let proposals: any[] = [];
+  try {
+    proposals = await prisma.investmentProposal.findMany({
+      where: { status: "ACTIVE" },
+      include: {
+        project: {
+          include: { farmer: true, farm: true, milestones: true },
+        },
+        eoiList: true,
       },
-      eoiList: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Investment proposals query error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">

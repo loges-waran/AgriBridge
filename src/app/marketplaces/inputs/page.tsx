@@ -20,11 +20,16 @@ export default async function InputMarketplacePage({
   const where: any = { stockQuantity: { gt: 0 } };
   if (category) where.category = category;
 
-  const products = await prisma.inputProduct.findMany({
-    where,
-    include: { supplier: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let products: any[] = [];
+  try {
+    products = await prisma.inputProduct.findMany({
+      where,
+      include: { supplier: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Input products query error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">

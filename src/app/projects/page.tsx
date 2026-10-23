@@ -19,16 +19,21 @@ export default async function ProjectsIndexPage({
   if (crop) where.cropName = { contains: crop };
   if (season) where.season = season;
 
-  const projects = await prisma.farmProject.findMany({
-    where,
-    include: {
-      farmer: true,
-      farm: true,
-      resourceGaps: true,
-      milestones: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  let projects: any[] = [];
+  try {
+    projects = await prisma.farmProject.findMany({
+      where,
+      include: {
+        farmer: true,
+        farm: true,
+        resourceGaps: true,
+        milestones: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Projects query error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">
@@ -121,7 +126,7 @@ export default async function ProjectsIndexPage({
         {/* Projects Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((p) => {
-            const openGaps = p.resourceGaps.filter((g) => g.status === "OPEN");
+            const openGaps = p.resourceGaps?.filter((g: any) => g.status === "OPEN") || [];
             const cropImg = getProjectCardImage(p.cropName, p.id);
             return (
               <div

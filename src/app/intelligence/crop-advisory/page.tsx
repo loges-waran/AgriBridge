@@ -8,9 +8,14 @@ import { getCropImage } from "@/lib/imageMap";
 export const dynamic = "force-dynamic";
 
 export default async function CropAdvisoryPage() {
-  const intelList = await prisma.agriculturalIntelligence.findMany({
-    orderBy: { cropName: "asc" },
-  });
+  let intelList: any[] = [];
+  try {
+    intelList = await prisma.agriculturalIntelligence.findMany({
+      orderBy: { cropName: "asc" },
+    });
+  } catch (error) {
+    console.error("Crop advisory query error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">

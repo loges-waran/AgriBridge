@@ -21,11 +21,16 @@ export default async function ProduceMarketplacePage({
   if (crop) where.cropName = { contains: crop };
   if (district) where.locationDistrict = district;
 
-  const listings = await prisma.produceListing.findMany({
-    where,
-    include: { farmer: true, offers: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let listings: any[] = [];
+  try {
+    listings = await prisma.produceListing.findMany({
+      where,
+      include: { farmer: true, offers: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Produce listings query error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">

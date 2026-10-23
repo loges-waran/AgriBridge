@@ -11,18 +11,28 @@ export const dynamic = "force-dynamic";
 export default async function FinancialsPage() {
   const user = await getCurrentUser();
 
-  const [txns, expenses, projects] = await Promise.all([
-    prisma.financialTransaction.findMany({
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.expenseRecord.findMany({
-      include: { project: true, payer: true },
-      orderBy: { paidAt: "desc" },
-    }),
-    prisma.farmProject.findMany({
-      include: { budgetEntries: true, expenses: true },
-    }),
-  ]);
+  let txns: any[] = [];
+  let expenses: any[] = [];
+  let projects: any[] = [];
+  try {
+    const res = await Promise.all([
+      prisma.financialTransaction.findMany({
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.expenseRecord.findMany({
+        include: { project: true, payer: true },
+        orderBy: { paidAt: "desc" },
+      }),
+      prisma.farmProject.findMany({
+        include: { budgetEntries: true, expenses: true },
+      }),
+    ]);
+    txns = res[0];
+    expenses = res[1];
+    projects = res[2];
+  } catch (error) {
+    console.error("Financials query error:", error);
+  }
 
   const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
 

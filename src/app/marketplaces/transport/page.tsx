@@ -12,18 +12,26 @@ export const dynamic = "force-dynamic";
 export default async function TransportMarketplacePage() {
   const user = await getCurrentUser();
 
-  const [vehicles, requests] = await Promise.all([
-    prisma.transportVehicle.findMany({
-      where: { isAvailable: true },
-      include: { transporter: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.transportRequest.findMany({
-      where: { status: "OPEN" },
-      include: { requester: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  let vehicles: any[] = [];
+  let requests: any[] = [];
+  try {
+    const res = await Promise.all([
+      prisma.transportVehicle.findMany({
+        where: { isAvailable: true },
+        include: { transporter: true },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.transportRequest.findMany({
+        where: { status: "OPEN" },
+        include: { requester: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+    vehicles = res[0];
+    requests = res[1];
+  } catch (error) {
+    console.error("Transport queries error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">

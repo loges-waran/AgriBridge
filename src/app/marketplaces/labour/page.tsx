@@ -12,17 +12,25 @@ export const dynamic = "force-dynamic";
 export default async function LabourMarketplacePage() {
   const user = await getCurrentUser();
 
-  const [profiles, jobs] = await Promise.all([
-    prisma.labourProfile.findMany({
-      where: { isAvailable: true },
-      include: { user: true },
-    }),
-    prisma.labourJob.findMany({
-      where: { status: "OPEN" },
-      include: { farmer: true, applications: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  let profiles: any[] = [];
+  let jobs: any[] = [];
+  try {
+    const res = await Promise.all([
+      prisma.labourProfile.findMany({
+        where: { isAvailable: true },
+        include: { user: true },
+      }),
+      prisma.labourJob.findMany({
+        where: { status: "OPEN" },
+        include: { farmer: true, applications: true },
+        orderBy: { createdAt: "desc" },
+      }),
+    ]);
+    profiles = res[0];
+    jobs = res[1];
+  } catch (error) {
+    console.error("Labour queries error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">

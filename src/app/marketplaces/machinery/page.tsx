@@ -21,11 +21,16 @@ export default async function MachineryMarketplacePage({
   if (category) where.category = category;
   if (district) where.district = district;
 
-  const machines = await prisma.machinery.findMany({
-    where,
-    include: { owner: true, bookings: true },
-    orderBy: { createdAt: "desc" },
-  });
+  let machines: any[] = [];
+  try {
+    machines = await prisma.machinery.findMany({
+      where,
+      include: { owner: true, bookings: true },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (error) {
+    console.error("Machinery query error:", error);
+  }
 
   return (
     <div className="py-8 bg-[#fbfbfa] min-h-screen">
