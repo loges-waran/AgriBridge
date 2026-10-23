@@ -19,6 +19,8 @@ function getResolvedDatabaseUrl(): string {
   return VERIFIED_SUPABASE_URL;
 }
 
+process.env.DATABASE_URL = getResolvedDatabaseUrl();
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
