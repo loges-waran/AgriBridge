@@ -1,0 +1,766 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------------------------------
+// 1. IDENTITY, ROLES & VERIFICATION
+// ----------------------------------------------------
+
+enum Role {
+  FARMER
+  LANDOWNER
+  INVESTOR
+  WORKER
+  BUYER
+  MACHINERY_OWNER
+  SUPPLIER
+  TRANSPORTER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum VerificationStatus {
+  NOT_SUBMITTED
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+model User {
+  id              String             @id @default(cuid())
+  email           String             @unique
+  passwordHash    String
+  fullName        String
+  phone           String?
+  district        String?
+  state           String?            @default("Tamil Nadu")
+  avatarUrl       String?
+  bio             String?
+  kycStatus                String             @default("NOT_SUBMITTED") // NOT_SUBMITTED, PENDING, VERIFIED, REJECTED
+  preferredLocale          String             @default("en") // en or ta
+  isEmailVerified          Boolean            @default(false)
+  emailVerifiedAt          DateTime?
+  emailVerificationCode    String?
+  emailVerificationExpires DateTime?
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
+  oauthProvider            String?
+  oauthId                  String?
+  isActive                 Boolean            @default(true)
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  // Relationships
+  roles               UserRole[]
+  verificationRecords VerificationRecord[]
+  farms               Farm[]
+  landRecords         LandRecord[]
+  farmProjects        FarmProject[]
+  projectMembers      ProjectMember[]
+  labourProfile       LabourProfile?
+  labourJobsPosted    LabourJob[]
+  labourApplications  LabourApplication[]
+  machineryOwned      Machinery[]
+  machineryBookings   MachineryBooking[]
+  supplierProfile     SupplierProfile?
+  inputOrders         InputOrder[]
+  produceListings     ProduceListing[]
+  buyerProfile        BuyerProfile?
+  buyerOffers         BuyerOffer[]
+  purchaseOrders      PurchaseOrder[]
+  transportVehicles   TransportVehicle[]
+  transportRequests   TransportRequest[]
+  investorProposals   InvestmentProposal[]
+  expressionsOfInt    ExpressionOfInterest[]
+  sentMessages        Message[]          @relation("SentMessages")
+  notifications       Notification[]
+  auditLogs           AdminAuditLog[]
+  complaintsFiled     Complaint[]        @relation("ComplaintsFiled")
+  reviewsGiven        Review[]           @relation("ReviewsGiven")
+  reviewsReceived     Review[]           @relation("ReviewsReceived")
+  expenseRecords      ExpenseRecord[]
+  financialTxns       FinancialTransaction[]
+  agreementsSigned    Agreement[]
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String   // FARMER, LANDOWNER, INVESTOR, WORKER, BUYER, MACHINERY_OWNER, SUPPLIER, TRANSPORTER, ADMIN
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+}
+
+model VerificationRecord {
+  id           String   @id @default(cuid())
+  userId       String
+  idType       String   // AADHAAR, PAN, LAND_PATTA, BUSINESS_LICENSE, GST, DRIVING_LICENSE
+  idNumber     String
+  documentUrl  String?
+  status       String   @default("PENDING") // PENDING, VERIFIED, REJECTED
+  reviewedBy   String?
+  reviewerNote String?
+  submittedAt  DateTime @default(now())
+  reviewedAt   DateTime?
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 2. FARMS & LAND RECORDS
+// ----------------------------------------------------
+
+model Farm {
+  id             String        @id @default(cuid())
+  ownerId        String
+  name           String
+  surveyNumber   String?
+  locationName   String
+  district       String
+  state          String        @default("Tamil Nadu")
+  latitude       Float?
+  longitude      Float?
+  totalAcres     Float
+  soilType       String?       // Red Loam, Clay, Black Soil, Alluvial, Sandy
+  waterSource    String?       // Borewell, Canal, Rainfed, Drip Irrigation, Open Well
+  powerSource    String?       // Free Solar, Grid 3-Phase, None
+  fencingStatus  String?       // Fenced, Partial, Open
+  isOrganic      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  owner          User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  landRecords    LandRecord[]
+  projects       FarmProject[]
+}
+
+model LandRecord {
+  id            String   @id @default(cuid())
+  ownerId       String
+  farmId        String?
+  titleNumber   String   // Patta / Chitta number
+  acresAvailable Float
+  soilPh        Float?
+  leaseType     String   @default("LEASE") // LEASE, SHARECROPPING, SALE, PARTNERSHIP
+  expectedRentPerAcre Float?
+  leaseDurationMonths Int?
+  isVerified    Boolean  @default(false)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  farm          Farm?    @relation(fields: [farmId], references: [id])
+}
+
+// ----------------------------------------------------
+// 3. FARM PROJECTS, GAPS, BUDGETS & MILESTONES
+// ----------------------------------------------------
+
+model FarmProject {
+  id                 String             @id @default(cuid())
+  farmerId           String
+  farmId             String?
+  title              String
+  description        String?
+  cropName           String
+  variety            String?
+  season             String             // Kharif, Rabi, Zaid, Year-round
+  acresAllotted      Float
+  expectedSowingDate DateTime
+  expectedHarvestDate DateTime
+  targetYieldKg      Float?
+  projectedRevenue   Float?
+  estimatedBudget    Float?
+  status             String             @default("PLANNING") 
+  // PLANNING, RESOURCE_ACQUISITION, READY_TO_START, IN_PROGRESS, HARVESTING, SELLING, COMPLETED, PAUSED, CANCELLED
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  farmer             User               @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  farm               Farm?              @relation(fields: [farmId], references: [id])
+  members            ProjectMember[]
+  resourceGaps       ResourceGap[]
+  milestones         ProjectMilestone[]
+  budgetEntries      ProjectBudget[]
+  expenses           ExpenseRecord[]
+  investmentProposals InvestmentProposal[]
+  produceListings    ProduceListing[]
+  agreements         Agreement[]
+}
+
+model ProjectMember {
+  id         String      @id @default(cuid())
+  projectId  String
+  userId     String
+  roleInProject String   // CO_FARMER, INVESTOR, AGRONOMIST, ADVISOR
+  joinedAt   DateTime    @default(now())
+
+  project    FarmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model ResourceGap {
+  id             String      @id @default(cuid())
+  projectId      String
+  category       String      // FUNDING, LABOUR, MACHINERY, INPUTS, BUYER, TRANSPORT, EXPERTISE
+  title          String
+  quantityNeeded Float?
+  unit           String?     // INR, Workers, Hours, Kg, Liters, Tons, Trips
+  urgency        String      @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  deadline       DateTime?
+  status         String      @default("OPEN") // OPEN, PARTIALLY_FULFILLED, FULFILLED, CANCELLED
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  project        FarmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectBudget {
+  id             String      @id @default(cuid())
+  projectId      String
+  category       String      // SEEDS, FERTILIZER, LABOUR, MACHINERY, IRRIGATION, TRANSPORT, CONTINGENCY
+  estimatedCost  Float
+  actualCost     Float       @default(0.0)
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  project        FarmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectMilestone {
+  id          String      @id @default(cuid())
+  projectId   String
+  title       String      // Land Preparation, Sowing, Weed & Pest Control, Flowering, Harvest
+  targetDate  DateTime
+  completedDate DateTime?
+  status      String      @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, DELAYED
+  proofNotes  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  project     FarmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 4. LABOUR MARKETPLACE
+// ----------------------------------------------------
+
+model LabourProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  skills          String   // Comma-separated: Tilling, Sowing, Weeding, Spraying, Harvesting, Pruning
+  yearsExperience Int      @default(1)
+  dailyWageRate   Float
+  serviceRadiusKm Float    @default(15.0)
+  isAvailable     Boolean  @default(true)
+  availabilityNote String?
+  crewSize        Int      @default(1) // 1 for individual, >1 for labor group leader
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LabourJob {
+  id              String              @id @default(cuid())
+  farmerId        String
+  projectId       String?
+  title           String
+  workType        String              // Sowing, Weeding, Spraying, Harvesting, Threshing
+  location        String
+  district        String
+  workersNeeded   Int
+  wagePerDay      Float
+  startDate       DateTime
+  endDate         DateTime
+  workingHours    String              @default("8 hours / day (7 AM - 3 PM)")
+  providesFood    Boolean             @default(false)
+  providesTransport Boolean           @default(false)
+  status          String              @default("OPEN") // OPEN, FILLED, COMPLETED, CANCELLED
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  farmer          User                @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  applications    LabourApplication[]
+}
+
+model LabourApplication {
+  id          String    @id @default(cuid())
+  jobId       String
+  workerId    String
+  workersCount Int      @default(1)
+  wageBid     Float?
+  status      String    @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, ACCEPTED, REJECTED, WITHDRAWN, COMPLETED
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  job         LabourJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  worker      User      @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, workerId])
+}
+
+// ----------------------------------------------------
+// 5. MACHINERY & EQUIPMENT MARKETPLACE
+// ----------------------------------------------------
+
+model Machinery {
+  id              String             @id @default(cuid())
+  ownerId         String
+  name            String             // John Deere 5050D Tractor, Rotavator, Drone Sprayer, Combine Harvester
+  category        String             // TRACTOR, HARVESTER, TILLER, SPRAYER, DRONE, SEED_DRILL, PUMP
+  modelYear       Int?
+  specs           String?            // 50 HP, 4WD, 10L drone tank capacity
+  rateType        String             @default("HOURLY") // HOURLY, DAILY, PER_ACRE
+  rentalRate      Float
+  district        String
+  serviceRadiusKm Float              @default(25.0)
+  providesOperator Boolean           @default(true)
+  fuelIncluded    Boolean            @default(false)
+  isAvailable     Boolean            @default(true)
+  imageUrl        String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  owner           User               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  bookings        MachineryBooking[]
+}
+
+model MachineryBooking {
+  id              String    @id @default(cuid())
+  machineryId     String
+  renterId        String
+  projectId       String?
+  startDate       DateTime
+  endDate         DateTime
+  totalUnitsBooked Float    // Hours or Days or Acres
+  totalAmount     Float
+  status          String    @default("REQUESTED") // REQUESTED, ACCEPTED, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, DISPUTED
+  operatorIncluded Boolean  @default(true)
+  pickupAddress   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  machinery       Machinery @relation(fields: [machineryId], references: [id], onDelete: Cascade)
+  renter          User      @relation(fields: [renterId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 6. AGRICULTURAL INPUTS STORE
+// ----------------------------------------------------
+
+model SupplierProfile {
+  id          String         @id @default(cuid())
+  userId      String         @unique
+  businessName String
+  licenseNumber String?
+  district    String
+  address     String?
+  deliveryRadiusKm Float     @default(50.0)
+  isVerified  Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products    InputProduct[]
+}
+
+model InputProduct {
+  id           String           @id @default(cuid())
+  supplierId   String
+  name         String
+  category     String           // SEED, FERTILIZER, ORGANIC_PESTICIDE, BIO_STIMULANT, IRRIGATION, TOOL
+  brand        String?
+  packageSize  String           // 5 kg bag, 1 Liter, 50 kg sack
+  unitPrice    Float
+  stockQuantity Int
+  isOrganic    Boolean          @default(false)
+  description  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  supplier     SupplierProfile  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  orderItems   InputOrderItem[]
+}
+
+model InputOrder {
+  id              String           @id @default(cuid())
+  farmerId        String
+  projectId       String?
+  totalAmount     Float
+  status          String           @default("PENDING") // PENDING, CONFIRMED, DISPATCHED, DELIVERED, CANCELLED
+  deliveryAddress String
+  deliveryMethod  String           @default("DOORSTEP") // DOORSTEP, PICKUP
+  notes           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  farmer          User             @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  items           InputOrderItem[]
+}
+
+model InputOrderItem {
+  id          String       @id @default(cuid())
+  orderId     String
+  productId   String
+  quantity    Int
+  pricePerUnit Float
+  totalPrice  Float
+
+  order       InputOrder   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     InputProduct @relation(fields: [productId], references: [id])
+}
+
+// ----------------------------------------------------
+// 7. INVESTMENT & PARTNERSHIP PROPOSALS
+// ----------------------------------------------------
+
+model InvestmentProposal {
+  id                 String                 @id @default(cuid())
+  projectId          String
+  farmerId           String
+  title              String
+  summary            String
+  targetFunding      Float
+  raisedFunding      Float                  @default(0.0)
+  minInvestment      Float                  @default(5000.0)
+  partnershipType    String                 // PROFIT_SHARE, FIXED_RETURN_REVENUE, LAND_PLUS_CAPITAL, HYBRID
+  profitSharePercent Float?
+  fixedReturnPercent Float?
+  cultivationMonths  Int
+  riskMitigation     String?
+  status             String                 @default("DRAFT") // DRAFT, SUBMITTED, UNDER_REVIEW, ACTIVE, FUNDED, COMPLETED, CANCELLED
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  project            FarmProject            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  farmer             User                   @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  eoiList            ExpressionOfInterest[]
+}
+
+model ExpressionOfInterest {
+  id            String             @id @default(cuid())
+  proposalId    String
+  investorId    String
+  proposedAmount Float
+  counterOfferTerms String?
+  status        String             @default("EXPRESSION_OF_INTEREST") // EXPRESSION_OF_INTEREST, NEGOTIATION, AGREEMENT_PENDING, AGREEMENT_CONFIRMED, REJECTED
+  message       String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  proposal      InvestmentProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  investor      User               @relation(fields: [investorId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 8. PRODUCE MARKETPLACE & BUYERS
+// ----------------------------------------------------
+
+model BuyerProfile {
+  id             String         @id @default(cuid())
+  userId         String         @unique
+  businessName   String
+  buyerType      String         // WHOLESALER, RETAILER, FOOD_PROCESSOR, EXPORTER, RESTAURANT_CHAIN, MANDI_TRADER
+  gstNumber      String?
+  preferredCrops String?        // Comma-separated: Paddy, Turmeric, Tomato, Banana, Sugarcane
+  district       String
+  isVerified     Boolean        @default(false)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProduceListing {
+  id                 String          @id @default(cuid())
+  farmerId           String
+  projectId          String?
+  cropName           String
+  variety            String?
+  grade              String          @default("GRADE_A") // GRADE_A, GRADE_B, ORGANIC_CERTIFIED, UNGRADED
+  quantityKg         Float
+  minimumOrderKg     Float           @default(100.0)
+  expectedHarvestDate DateTime
+  isPreHarvestListing Boolean        @default(false)
+  askingPricePerKg   Float
+  packagingType      String          @default("Jute Bags") // Jute Bags, Crates, Bulk Loose, Net Bags
+  locationDistrict   String
+  status             String          @default("AVAILABLE") // AVAILABLE, UNDER_OFFER, CONTRACTED, SOLD, EXPIRED
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  farmer             User            @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  project            FarmProject?    @relation(fields: [projectId], references: [id])
+  offers             BuyerOffer[]
+  purchaseOrders     PurchaseOrder[]
+}
+
+model BuyerOffer {
+  id             String         @id @default(cuid())
+  listingId      String
+  buyerId        String
+  offeredPricePerKg Float
+  quantityRequestedKg Float
+  deliveryDeadline DateTime?
+  paymentTerms   String         @default("50_ADVANCE_50_ON_DELIVERY") // 100_ADVANCE, 50_ADVANCE_50_ON_DELIVERY, ON_DELIVERY
+  status         String         @default("OFFERED") // OFFERED, COUNTER_OFFERED, ACCEPTED, REJECTED, WITHDRAWN
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  listing        ProduceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer          User           @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+}
+
+model PurchaseOrder {
+  id             String          @id @default(cuid())
+  listingId      String
+  buyerId        String
+  totalQuantityKg Float
+  finalPricePerKg Float
+  grossAmount    Float
+  platformFee    Float           @default(0.0)
+  netAmountToFarmer Float
+  status         String          @default("DRAFT") // DRAFT, OFFERED, ACCEPTED, CONFIRMED, DISPATCHED, DELIVERED, COMPLETED, DISPUTED, CANCELLED
+  deliveryAddress String
+  deliveryMethod String          @default("BUYER_ARRANGES") // BUYER_ARRANGES, FARMER_ARRANGES, PLATFORM_TRANSPORT
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  listing        ProduceListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer          User            @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  shipments      Shipment[]
+}
+
+// ----------------------------------------------------
+// 9. TRANSPORT & LOGISTICS
+// ----------------------------------------------------
+
+model TransportVehicle {
+  id             String             @id @default(cuid())
+  transporterId  String
+  vehicleNumber  String
+  vehicleType    String             // MINI_TRUCK (Tata Ace), 3_TON_TRUCK, 10_TON_GRAIN_LORRY, REFRIGERATED_CONTAINER, TRACTOR_TRAILER
+  capacityTons   Float
+  isRefrigerated Boolean            @default(false)
+  baseDistrict   String
+  ratePerKm      Float
+  isAvailable    Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  transporter    User               @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+  shipments      Shipment[]
+}
+
+model TransportRequest {
+  id               String     @id @default(cuid())
+  requesterId      String
+  pickupLocation   String
+  pickupDistrict   String
+  dropLocation     String
+  dropDistrict     String
+  cargoType        String     // Fresh Produce, Seeds/Inputs, Machinery Move, Harvest Grains
+  weightTons       Float
+  preferredDate    DateTime
+  offeredFare      Float?
+  status           String     @default("OPEN") // OPEN, ASSIGNED, IN_TRANSIT, DELIVERED, CANCELLED
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  requester        User       @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+  shipments        Shipment[]
+}
+
+model Shipment {
+  id                 String            @id @default(cuid())
+  transportRequestId String?
+  purchaseOrderId    String?
+  vehicleId          String
+  status             String            @default("ASSIGNED") // ASSIGNED, DISPATCHED, IN_TRANSIT, DELIVERED, CONFIRMED
+  pickupTime         DateTime?
+  deliveredTime      DateTime?
+  proofOfDelivery    String?
+  freightCost        Float
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  transportRequest   TransportRequest? @relation(fields: [transportRequestId], references: [id])
+  purchaseOrder      PurchaseOrder?    @relation(fields: [purchaseOrderId], references: [id])
+  vehicle            TransportVehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 10. AGREEMENTS, FINANCIALS & EXPENSES
+// ----------------------------------------------------
+
+model Agreement {
+  id             String       @id @default(cuid())
+  projectId      String?
+  partnerId      String
+  type           String       // LAND_LEASE, INVESTMENT_PARTNERSHIP, LABOUR_CONTRACT, PRODUCE_FORWARD_CONTRACT, MACHINERY_LEASE
+  title          String
+  termsSummary   String
+  clauses        String       // JSON array or structured text of agreed clauses
+  effectiveDate  DateTime
+  expiryDate     DateTime?
+  status         String       @default("DRAFT") // DRAFT, PENDING_SIGNATURES, CONFIRMED, TERMINATED, DISPUTED
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  project        FarmProject? @relation(fields: [projectId], references: [id])
+  partner        User         @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+}
+
+model ExpenseRecord {
+  id          String       @id @default(cuid())
+  projectId   String
+  payerId     String
+  category    String       // SEED, FERTILIZER, LABOUR, MACHINERY, FUEL, TRANSPORT, IRRIGATION, MISC
+  description String
+  amount      Float
+  invoiceRef  String?
+  receiptUrl  String?
+  paidAt      DateTime     @default(now())
+
+  project     FarmProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payer       User         @relation(fields: [payerId], references: [id], onDelete: Cascade)
+}
+
+model FinancialTransaction {
+  id             String   @id @default(cuid())
+  userId         String
+  referenceType  String   // PRODUCE_ORDER, INPUT_ORDER, MACHINERY_BOOKING, LABOUR_WAGE, INVESTMENT, PLATFORM_FEE
+  referenceId    String
+  amount         Float
+  currency       String   @default("INR")
+  transactionType String  // CREDIT, DEBIT
+  status         String   @default("COMPLETED") // PENDING, COMPLETED, FAILED, REFUNDED
+  paymentMode    String   @default("ESCROW_SIMULATED") // ESCROW_SIMULATED, UPI_QR, NET_BANKING, CASH_ON_DELIVERY
+  description    String
+  createdAt      DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ----------------------------------------------------
+// 11. COMMUNICATION, NOTIFICATIONS & AUDIT
+// ----------------------------------------------------
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // MATCH, OFFER, BOOKING, PAYMENT, MILESTONE, DISPUTE, SYSTEM
+  linkUrl   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  entityType String?  // PROJECT, LISTING, ORDER, JOB, BOOKING
+  entityId   String?
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id          String   @id @default(cuid())
+  authorId    String
+  targetId    String
+  entityType  String   // WORKER, FARMER, MACHINERY, BUYER, SUPPLIER, TRANSPORTER
+  rating      Int      // 1 to 5
+  feedback    String
+  createdAt   DateTime @default(now())
+
+  author      User     @relation("ReviewsGiven", fields: [authorId], references: [id], onDelete: Cascade)
+  target      User     @relation("ReviewsReceived", fields: [targetId], references: [id], onDelete: Cascade)
+}
+
+model Complaint {
+  id          String    @id @default(cuid())
+  userId      String
+  category    String    // NON_PAYMENT, NO_SHOW_LABOUR, MACHINE_BREAKDOWN, QUALITY_DISPUTE, LATE_DELIVERY, OTHER
+  subject     String
+  description String
+  status      String    @default("OPEN") // OPEN, UNDER_REVIEW, RESOLVED, DISMISSED
+  resolution  String?
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  user        User      @relation("ComplaintsFiled", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   // VERIFIED_USER, REJECTED_KYC, RESOLVED_DISPUTE, BANNED_LISTING, RECONCILED_PAYMENT
+  targetType String
+  targetId   String
+  details    String?
+  createdAt  DateTime @default(now())
+
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model AgriculturalIntelligence {
+  id              String   @id @default(cuid())
+  cropName        String   @unique
+  recommendedSoil String
+  waterRequirement String  // Low, Medium, High, Very High
+  seasonTamilNadu String   // Kuruvai, Samba, Navarai, Year-Round
+  growthDurationDays Int
+  avgYieldPerAcreKg Float
+  avgCostPerAcreInr Float
+  baseSellingPricePerKg Float
+  risksAndMitigation String
+  createdAt       DateTime @default(now())
+}
+
+model AiUsageLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  prompt     String
+  topic      String
+  provider   String   // gemini, openai, knowledge-base
+  locale     String   @default("en")
+  isSafe     Boolean  @default(true)
+  flagReason String?
+  tokensUsed Int?     @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model PlatformSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+}
