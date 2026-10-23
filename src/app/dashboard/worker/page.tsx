@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function WorkerDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.roles.includes("WORKER")) redirect("/dashboard");
 
   const [profile, applications, openJobs] = await Promise.all([
     prisma.labourProfile.findUnique({
@@ -77,20 +78,20 @@ export default async function WorkerDashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-6">
           <StatCard
             label="Daily Wage Rate"
-            value={`₹${profile?.dailyWageRate || 650}`}
+            value={profile?.dailyWageRate ? `₹${profile.dailyWageRate}` : "Standard ₹650"}
             subtext="Per Worker / Day"
             icon={Users}
           />
           <StatCard
             label="Gang Size"
-            value={`${profile?.crewSize || 6} Workers`}
-            subtext="Trained Farm Hands"
+            value={profile?.crewSize ? `${profile.crewSize} Workers` : "1 Worker"}
+            subtext={profile?.skills ? profile.skills.split(",").slice(0, 2).join(", ") : "Trained Farm Hands"}
             icon={CheckCircle2}
           />
           <StatCard
             label="Operating Radius"
-            value={`${profile?.serviceRadiusKm || 25} km`}
-            subtext={user.district || "Thiruvarur"}
+            value={profile?.serviceRadiusKm ? `${profile.serviceRadiusKm} km` : "Taluk Level"}
+            subtext={user.district || "Tamil Nadu"}
             icon={MapPin}
           />
           <StatCard

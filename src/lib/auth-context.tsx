@@ -10,6 +10,7 @@ export interface AuthUser {
   district: string | null;
   state: string | null;
   kycStatus: string;
+  isEmailVerified: boolean;
   activeRole: string;
   roles: string[];
   preferredLocale: string;
@@ -19,7 +20,7 @@ interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
   refreshUser: () => Promise<void>;
-  switchRole: (role: string) => Promise<void>;
+  switchRole: (role: string, targetPath?: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -55,19 +56,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser();
   }, []);
 
-  const switchRole = async (role: string) => {
+  const switchRole = async (role: string, targetPath?: string) => {
     try {
       const res = await fetch("/api/auth/switch-role", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role }),
       });
-      if (res.ok) {
-        await refreshUser();
-        window.location.reload();
-      }
+      const dest = targetPath || `/dashboard/${role.toLowerCase()}`;
+      window.location.href = dest;
     } catch (e) {
       console.error("Failed to switch role:", e);
+      window.location.href = targetPath || `/dashboard/${role.toLowerCase()}`;
     }
   };
 

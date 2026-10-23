@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashPassword, createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { RegisterSchema } from "@/lib/validation";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req);
+    const rl = rateLimit(`register:${ip}`, { intervalMs: 60000, maxRequests: 10 });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please wait a minute and try again." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const result = RegisterSchema.safeParse(body);
     if (!result.success) {
@@ -16,8 +26,18 @@ export async function POST(req: Request) {
 
     const { email, password, fullName, phone, district, state, roles } = result.data;
 
+    // Defense-in-depth: Never allow ADMIN or SUPER_ADMIN assignment via public registration
+    if (roles.includes("ADMIN") || roles.includes("SUPER_ADMIN")) {
+      return NextResponse.json(
+        { error: "Administrator privileges cannot be assigned through public registration" },
+        { status: 403 }
+      );
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
     const existing = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existing) {
@@ -28,16 +48,21 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await hashPassword(password);
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         passwordHash,
         fullName,
         phone,
         district,
         state,
         kycStatus: "NOT_SUBMITTED",
+        isEmailVerified: false,
+        emailVerificationCode: verificationCode,
+        emailVerificationExpires: verificationExpires,
         roles: {
           create: roles.map((r, idx) => ({
             role: r,
@@ -85,38 +110,16 @@ export async function POST(req: Request) {
       });
     }
 
-    const defaultRole = roles[0];
-    const token = await createSessionToken({
-      userId: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      activeRole: defaultRole,
-      roles,
-    });
+    console.log(`[AgriBridge Auth] Email verification code for ${normalizedEmail}: ${verificationCode}`);
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        activeRole: defaultRole,
-        roles,
-        kycStatus: user.kycStatus,
-      },
-    });
-
-    response.cookies.set({
-      name: SESSION_COOKIE_NAME,
-      value: token,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-
-    return response;
+      requiresVerification: true,
+      email: user.email,
+      roles,
+      message: "Registration successful. Please verify your email with the 6-digit verification code.",
+      previewCode: verificationCode,
+    }, { status: 201 });
   } catch (error) {
     console.error("Register error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

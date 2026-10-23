@@ -2,9 +2,19 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword, createSessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 import { LoginSchema } from "@/lib/validation";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = getClientIp(req);
+    const rl = rateLimit(`login:${ip}`, { intervalMs: 60000, maxRequests: 10 });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: "Too many login attempts. Please wait a minute and try again." },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const result = LoginSchema.safeParse(body);
     if (!result.success) {
@@ -15,8 +25,10 @@ export async function POST(req: Request) {
     }
 
     const { email, password } = result.data;
+    const normalizedEmail = email.toLowerCase().trim();
+
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
       include: { roles: true },
     });
 
@@ -35,6 +47,17 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!user.isEmailVerified) {
+      return NextResponse.json(
+        {
+          error: "Your email address is not yet verified. Please verify your email to access your account.",
+          requiresVerification: true,
+          email: user.email,
+        },
+        { status: 403 }
+      );
+    }
+
     const roleNames = user.roles.map((r) => r.role);
     const defaultRole = user.roles.find((r) => r.isDefault)?.role || roleNames[0] || "FARMER";
 
@@ -44,6 +67,7 @@ export async function POST(req: Request) {
       fullName: user.fullName,
       activeRole: defaultRole,
       roles: roleNames,
+      isEmailVerified: true,
     });
 
     const response = NextResponse.json({
@@ -55,6 +79,7 @@ export async function POST(req: Request) {
         activeRole: defaultRole,
         roles: roleNames,
         kycStatus: user.kycStatus,
+        isEmailVerified: true,
       },
     });
 

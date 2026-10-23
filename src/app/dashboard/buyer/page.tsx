@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function BuyerDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.roles.includes("BUYER")) redirect("/dashboard");
 
   const [profile, myOffers, myOrders, availableListings] = await Promise.all([
     prisma.buyerProfile.findUnique({
@@ -92,9 +93,9 @@ export default async function BuyerDashboardPage() {
             icon={ShoppingBag}
           />
           <StatCard
-            label="Preferred Crops"
-            value="Paddy &amp; Turmeric"
-            subtext="Delta Fine Grains"
+            label="Preferred Commodities"
+            value={profile?.preferredCrops ? profile.preferredCrops.split(",").slice(0, 2).join(" & ") : "Paddy & Turmeric"}
+            subtext="Procurement Focus"
             icon={CheckCircle2}
           />
           <StatCard

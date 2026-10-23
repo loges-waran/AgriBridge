@@ -62,9 +62,15 @@ export default function RegisterPage() {
         throw new Error(data.error || "Registration failed");
       }
 
+      if (data.requiresVerification) {
+        const codeParam = data.previewCode ? `&code=${encodeURIComponent(data.previewCode)}` : "";
+        router.push(`/verify-email?email=${encodeURIComponent(formData.email)}${codeParam}`);
+        return;
+      }
+
       await refreshUser();
       const primaryRole = formData.roles[0] || "FARMER";
-      router.push(`/dashboard/${primaryRole.toLowerCase()}`);
+      window.location.href = `/dashboard/${primaryRole.toLowerCase()}`;
     } catch (err: any) {
       setError(err.message);
     } finally {

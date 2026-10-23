@@ -115,6 +115,8 @@ async function main() {
         state: u.state,
         kycStatus: u.kycStatus,
         bio: u.bio,
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
       },
       create: {
         email: u.email,
@@ -125,6 +127,8 @@ async function main() {
         state: u.state,
         kycStatus: u.kycStatus,
         bio: u.bio,
+        isEmailVerified: true,
+        emailVerifiedAt: new Date(),
       },
     });
 
@@ -136,6 +140,69 @@ async function main() {
     });
 
     createdUsers[u.role] = user;
+  }
+
+  // 1b. Provision Super Admin Account for Project Owner (controlled by environment variables)
+  const ownerEmail = (process.env.SUPER_ADMIN_EMAIL || "owner@agribridge.org").toLowerCase().trim();
+  const ownerPasswordRaw = process.env.SUPER_ADMIN_PASSWORD || "SuperAdmin2026!AgriOwner";
+  const ownerName = process.env.SUPER_ADMIN_NAME || "Project Owner [Super Admin]";
+  const ownerPhone = process.env.SUPER_ADMIN_PHONE || "+91 98400 99999";
+  const ownerHash = await bcrypt.hash(ownerPasswordRaw, 10);
+
+  const superAdminUser = await prisma.user.upsert({
+    where: { email: ownerEmail },
+    update: {
+      fullName: ownerName,
+      phone: ownerPhone,
+      district: "Chennai",
+      state: "Tamil Nadu",
+      kycStatus: "VERIFIED",
+      bio: "Root Super Administrator and AgriBridge Ecosystem Project Owner.",
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+    create: {
+      email: ownerEmail,
+      passwordHash: ownerHash,
+      fullName: ownerName,
+      phone: ownerPhone,
+      district: "Chennai",
+      state: "Tamil Nadu",
+      kycStatus: "VERIFIED",
+      bio: "Root Super Administrator and AgriBridge Ecosystem Project Owner.",
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
+    },
+  });
+
+  // Assign both SUPER_ADMIN and ADMIN roles to the owner
+  await prisma.userRole.upsert({
+    where: { userId_role: { userId: superAdminUser.id, role: "SUPER_ADMIN" } },
+    update: { isDefault: true },
+    create: { userId: superAdminUser.id, role: "SUPER_ADMIN", isDefault: true },
+  });
+  await prisma.userRole.upsert({
+    where: { userId_role: { userId: superAdminUser.id, role: "ADMIN" } },
+    update: { isDefault: false },
+    create: { userId: superAdminUser.id, role: "ADMIN", isDefault: false },
+  });
+
+  // Seed default platform settings
+  const defaultSettings = [
+    { key: "platform_name", value: "AgriBridge Unified Agriculture Platform", description: "Display name of the platform" },
+    { key: "maintenance_mode", value: "false", description: "Enable/disable system maintenance mode" },
+    { key: "kyc_auto_approval", value: "false", description: "Whether Aadhaar/Patta verifications auto-approve or queue for manual review" },
+    { key: "ai_max_tokens_per_query", value: "1000", description: "Token limit for Gemini / OpenAI queries" },
+    { key: "ai_provider_priority", value: "gemini,openai,knowledge-base", description: "Order of fallback for AI reasoning" },
+    { key: "support_helpline_phone", value: "+91 1800 425 3555", description: "State agriculture helpline number" },
+  ];
+
+  for (const s of defaultSettings) {
+    await prisma.platformSetting.upsert({
+      where: { key: s.key },
+      update: { value: s.value, description: s.description },
+      create: { key: s.key, value: s.value, description: s.description, updatedBy: superAdminUser.id },
+    });
   }
 
   const farmer = createdUsers["FARMER"];

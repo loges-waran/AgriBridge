@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function LandownerDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.roles.includes("LANDOWNER")) redirect("/dashboard");
 
   const [farms, landRecords] = await Promise.all([
     prisma.farm.findMany({
@@ -72,8 +73,8 @@ export default async function LandownerDashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 my-6">
           <StatCard
             label="Total Acreage"
-            value={`${totalAcres || 14.5} Acres`}
-            subtext="Registered Farmlands"
+            value={`${totalAcres} Acres`}
+            subtext={`${farms.length} Registered Farmlands`}
             icon={Layers}
           />
           <StatCard
@@ -84,10 +85,10 @@ export default async function LandownerDashboardPage() {
           />
           <StatCard
             label="Verification Status"
-            value="100% Patta Verified"
-            subtext="Revenue Department Aligned"
+            value={user.kycStatus === "VERIFIED" ? "Patta Verified" : "Verification Pending"}
+            subtext="Revenue Department Alignment"
             icon={CheckCircle2}
-            trendPositive={true}
+            trendPositive={user.kycStatus === "VERIFIED"}
           />
         </div>
 
@@ -95,7 +96,25 @@ export default async function LandownerDashboardPage() {
           <h3 className="text-sm font-bold text-stone-900 mb-4 pb-3 border-b border-stone-100">
             My Registered Agricultural Parcels
           </h3>
-          <div className="space-y-4">
+          {landRecords.length === 0 ? (
+            <div className="text-center py-8 px-4 rounded-xl border border-dashed border-stone-200 bg-stone-50/60">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-[#24593c] flex items-center justify-center mx-auto mb-2">
+                <Layers className="w-6 h-6" />
+              </div>
+              <h4 className="text-xs font-bold text-stone-800">No Agricultural Parcels Registered</h4>
+              <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                You have not registered any agricultural land records yet. Add a parcel with revenue survey numbers to connect with verified cultivators.
+              </p>
+              <Link
+                href="/marketplaces/land"
+                className="inline-flex items-center gap-1.5 mt-3 px-3.5 py-2 bg-[#24593c] text-white rounded-lg text-xs font-bold hover:bg-[#1a402a] shadow-xs"
+              >
+                <span>Register Farmland Parcel</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
             {landRecords.map((r) => (
               <div
                 key={r.id}
@@ -124,7 +143,8 @@ export default async function LandownerDashboardPage() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

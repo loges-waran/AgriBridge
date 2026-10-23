@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user || user.activeRole !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!user || (!user.roles.includes("ADMIN") && !user.roles.includes("SUPER_ADMIN"))) return NextResponse.json({ error: "Forbidden: Administrator privileges required" }, { status: 403 });
 
     const complaints = await prisma.complaint.findMany({
       include: { user: true },
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
     // 1. If admin is resolving
     if (body.type === "RESOLVE") {
-      if (user.activeRole !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (!user.roles.includes("ADMIN") && !user.roles.includes("SUPER_ADMIN")) return NextResponse.json({ error: "Forbidden: Administrator privileges required" }, { status: 403 });
 
       const { complaintId, resolution } = body;
       const updated = await prisma.complaint.update({

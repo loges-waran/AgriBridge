@@ -5,8 +5,8 @@ import { getCurrentUser } from "@/lib/auth";
 export async function GET() {
   try {
     const user = await getCurrentUser();
-    if (!user || user.activeRole !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!user || (!user.roles.includes("ADMIN") && !user.roles.includes("SUPER_ADMIN"))) {
+      return NextResponse.json({ error: "Forbidden: Administrator privileges required" }, { status: 403 });
     }
 
     const records = await prisma.user.findMany({
@@ -24,8 +24,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user || user.activeRole !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (!user || (!user.roles.includes("ADMIN") && !user.roles.includes("SUPER_ADMIN"))) {
+      return NextResponse.json({ error: "Forbidden: Administrator privileges required" }, { status: 403 });
     }
 
     const body = await req.json();

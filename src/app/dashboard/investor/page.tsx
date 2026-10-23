@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function InvestorDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.roles.includes("INVESTOR")) redirect("/dashboard");
 
   const [proposals, myEois] = await Promise.all([
     prisma.investmentProposal.findMany({
@@ -118,7 +119,18 @@ export default async function InvestorDashboardPage() {
             <span className="text-xs text-stone-500">{proposals.length} Opportunities</span>
           </h3>
 
-          <div className="space-y-4">
+          {proposals.length === 0 ? (
+            <div className="text-center py-8 px-4 rounded-xl border border-dashed border-stone-200 bg-stone-50/60">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-[#24593c] flex items-center justify-center mx-auto mb-2">
+                <Coins className="w-6 h-6" />
+              </div>
+              <h4 className="text-xs font-bold text-stone-800">No Active Investment Proposals</h4>
+              <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                There are currently no active co-farming proposals seeking working capital. Check back when farmers register new seasonal cycles.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
             {proposals.map((prop) => (
               <div
                 key={prop.id}
@@ -190,7 +202,8 @@ export default async function InvestorDashboardPage() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

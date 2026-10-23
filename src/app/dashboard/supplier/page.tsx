@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function SupplierDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.roles.includes("SUPPLIER")) redirect("/dashboard");
 
   const [profile, products] = await Promise.all([
     prisma.supplierProfile.findUnique({
@@ -84,7 +85,7 @@ export default async function SupplierDashboardPage() {
           />
           <StatCard
             label="Delivery Radius"
-            value={`${profile?.deliveryRadiusKm || 75} km`}
+            value={profile?.deliveryRadiusKm ? `${profile.deliveryRadiusKm} km` : "District Fleet"}
             subtext="Doorstep Delivery"
             icon={CheckCircle2}
             trendPositive={true}
@@ -104,7 +105,25 @@ export default async function SupplierDashboardPage() {
             <span className="text-xs text-stone-500">{products.length} Products</span>
           </h3>
 
-          <div className="space-y-4">
+          {products.length === 0 ? (
+            <div className="text-center py-8 px-4 rounded-xl border border-dashed border-stone-200 bg-stone-50/60">
+              <div className="w-12 h-12 rounded-full bg-teal-50 text-teal-800 flex items-center justify-center mx-auto mb-2">
+                <Package className="w-6 h-6" />
+              </div>
+              <h4 className="text-xs font-bold text-stone-800">No Catalog Products Registered</h4>
+              <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                Your input inventory is currently empty. Add certified seeds, bio-fertilizers, or micro-nutrients to your catalog.
+              </p>
+              <Link
+                href="/marketplaces/inputs"
+                className="inline-flex items-center gap-1.5 mt-3 px-3.5 py-2 bg-[#24593c] text-white rounded-lg text-xs font-bold hover:bg-[#1a402a] shadow-xs"
+              >
+                <span>Add Product to Catalog</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
             {products.map((p) => {
               const inImg = getInputImage(p.category);
               return (
@@ -150,7 +169,8 @@ export default async function SupplierDashboardPage() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

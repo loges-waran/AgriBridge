@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function MachineryDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.roles.includes("MACHINERY_OWNER")) redirect("/dashboard");
 
   const [machines, bookings] = await Promise.all([
     prisma.machinery.findMany({

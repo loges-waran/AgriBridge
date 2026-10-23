@@ -9,7 +9,7 @@
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:seed": "node --loader ts-node/esm prisma/seed.ts || npx tsx prisma/seed.ts || node prisma/seed.js",
-    "test:runner": "node scripts/test-runner.js"
+    "test:runner": "npx tsx scripts/test-runner.js"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

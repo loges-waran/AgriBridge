@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+export const PUBLIC_REGISTRATION_ROLES = [
+  "FARMER",
+  "LANDOWNER",
+  "INVESTOR",
+  "WORKER",
+  "BUYER",
+  "MACHINERY_OWNER",
+  "SUPPLIER",
+  "TRANSPORTER",
+] as const;
+
+export type PublicRole = (typeof PUBLIC_REGISTRATION_ROLES)[number];
+
 export const RegisterSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -7,12 +20,43 @@ export const RegisterSchema = z.object({
   phone: z.string().optional(),
   district: z.string().min(2, "District is required"),
   state: z.string().default("Tamil Nadu"),
-  roles: z.array(z.string()).min(1, "At least one role must be selected"),
+  roles: z
+    .array(z.string())
+    .min(1, "At least one role must be selected")
+    .refine(
+      (roles) => !roles.includes("ADMIN") && !roles.includes("SUPER_ADMIN"),
+      "Administrator privileges cannot be assigned through public registration"
+    )
+    .refine(
+      (roles) =>
+        roles.every((r) =>
+          (PUBLIC_REGISTRATION_ROLES as readonly string[]).includes(r)
+        ),
+      "One or more selected roles are invalid"
+    ),
 });
 
 export const LoginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
+});
+
+export const VerifyEmailSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  code: z.string().min(4, "Verification code must be at least 4 digits").max(10),
+});
+
+export const ResendVerificationSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+export const ForgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+export const ResetPasswordSchema = z.object({
+  token: z.string().min(10, "Invalid reset token"),
+  newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
 export const FarmProjectSchema = z.object({

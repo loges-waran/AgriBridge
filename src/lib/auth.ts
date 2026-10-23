@@ -14,6 +14,7 @@ export interface SessionPayload {
   fullName: string;
   activeRole: string;
   roles: string[];
+  isEmailVerified?: boolean;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -52,6 +53,7 @@ export async function getCurrentUser(): Promise<{
   district: string | null;
   state: string | null;
   kycStatus: string;
+  isEmailVerified: boolean;
   activeRole: string;
   roles: string[];
   preferredLocale: string;
@@ -84,6 +86,7 @@ export async function getCurrentUser(): Promise<{
       district: user.district,
       state: user.state,
       kycStatus: user.kycStatus,
+      isEmailVerified: Boolean(user.isEmailVerified),
       activeRole,
       roles: roleNames,
       preferredLocale: user.preferredLocale,

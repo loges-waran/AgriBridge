@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminDisputesPage() {
   const user = await getCurrentUser();
-  if (!user || user.activeRole !== "ADMIN") redirect("/login");
+  if (!user || (!user.roles.includes("ADMIN") && !user.roles.includes("SUPER_ADMIN"))) redirect("/login");
 
   const complaints = await prisma.complaint.findMany({
     include: { user: true },

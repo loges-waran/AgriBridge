@@ -107,8 +107,7 @@ export function QuickDemoLogin() {
       });
 
       if (res.ok) {
-        await refreshUser();
-        router.push(targetPath);
+        window.location.href = targetPath;
       } else {
         alert("Demo login failed. Please ensure seed script has run.");
       }

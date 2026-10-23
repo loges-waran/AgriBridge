@@ -12,6 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function TransporterDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+  if (!user.roles.includes("TRANSPORTER")) redirect("/dashboard");
 
   const [vehicles, shipments, requests] = await Promise.all([
     prisma.transportVehicle.findMany({
@@ -109,7 +110,25 @@ export default async function TransporterDashboardPage() {
             <span className="text-xs text-stone-500">{vehicles.length} Units</span>
           </h3>
 
-          <div className="space-y-4">
+          {vehicles.length === 0 ? (
+            <div className="text-center py-8 px-4 rounded-xl border border-dashed border-stone-200 bg-stone-50/60">
+              <div className="w-12 h-12 rounded-full bg-indigo-50 text-indigo-800 flex items-center justify-center mx-auto mb-2">
+                <Truck className="w-6 h-6" />
+              </div>
+              <h4 className="text-xs font-bold text-stone-800">No Transport Vehicles Registered</h4>
+              <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                Your haulage fleet is empty. Register a 3.5T mini-truck or grain lorry to receive mandi transport bookings.
+              </p>
+              <Link
+                href="/marketplaces/transport"
+                className="inline-flex items-center gap-1.5 mt-3 px-3.5 py-2 bg-[#24593c] text-white rounded-lg text-xs font-bold hover:bg-[#1a402a] shadow-xs"
+              >
+                <span>Add Vehicle to Fleet</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
             {vehicles.map((v) => (
               <div
                 key={v.id}
@@ -141,7 +160,8 @@ export default async function TransporterDashboardPage() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

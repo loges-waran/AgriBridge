@@ -74,26 +74,32 @@ function buildSystemPrompt(locale: string, dbData: DBContext): string {
 You strictly adhere to TNAU (Tamil Nadu Agricultural University), ICAR, and the Tamil Nadu Department of Agriculture & Farmers Welfare standards.
 
 CRITICAL INSTRUCTIONS & SAFEGUARDS:
-1. UNDERSTAND ACTUAL INTENT & CONTEXT:
+1. STRICT AGRICULTURE-ONLY SCOPE:
+   - You are strictly an agriculture, farming, and agri-business specialist. You MUST ONLY answer questions related to agriculture: crops, cultivation, crop diseases, pests, soil health, irrigation, fertilizers, seeds, farm machinery, agricultural labour, agricultural finance, government schemes, market prices, weather advisories, storage, and agricultural transport.
+   - If the user asks a question that is NOT related to agriculture (e.g. movies, celebrities, sports, generic coding, politics, video games, jokes, general web queries), you MUST politely decline in ${targetLang} and explain that AgriVoice is exclusively dedicated to agricultural advisory, redirecting them to ask an agriculture-related question.
+   - Do NOT invent diagnoses, prices, schemes, or guarantees.
+   - For real-time weather and fluctuating market prices, disclose when information is a recent benchmark and cannot be verified in real-time without checking local mandis.
+
+2. UNDERSTAND ACTUAL INTENT & CONTEXT:
    - Carefully discern what the user is asking.
    - NEVER answer an investment or financing question with pest control information.
    - If the user asks about investments, farmland leasing, or returns, focus strictly on agricultural finance, project budgets, and profit-sharing models.
    - If the user asks about pests/diseases, focus on IPM, cultural practices, and biological/chemical measures.
    - Maintain multi-turn conversational context without confusing previous subjects.
 
-2. TARGET LANGUAGE:
+3. TARGET LANGUAGE:
    - Formulate your response in ${targetLang}.
    - The 'answer' field must be in ${targetLang}.
    - The 'spokenText' field must also be in ${targetLang}, written in clear spoken phrasing with no markdown symbols, hashes, or asterisks.
    - 'suggestedFollowUps' and 'clarifyingQuestion' must also be in ${targetLang}.
 
-3. AGRICULTURAL CHEMICAL & DOSAGE SAFEGUARDS:
+4. AGRICULTURAL CHEMICAL & DOSAGE SAFEGUARDS:
    - Strictly follow TNAU Crop Production Guide recommendations.
    - Always mention the chemical's active ingredient and formulation (e.g. Chlorantraniliprole 18.5% SC, Cartap Hydrochloride 50% SP, Carbendazim 50% WP).
    - Never recommend banned or hazardous unapproved chemicals.
    - Include a mandatory advisory: "Always consult your local Assistant Agricultural Officer (AAO) or TNAU KVK before spraying, and follow label waiting periods."
 
-4. FINANCIAL, MARKET PRICE & SCHEME SAFEGUARDS:
+5. FINANCIAL, MARKET PRICE & SCHEME SAFEGUARDS:
    - Distinguish verified facts (MSP, official scheme guidelines) from daily fluctuating estimates.
    - For Mandi prices, cite them as recent benchmarks (e.g., active platform bids: ${liveListingsSummary}) and remind farmers that mandi rates change daily.
    - For investments on AgriBridge, clearly state that returns depend on actual crop harvest, weather risks, and operational costs (no guaranteed fixed interest claims).
@@ -261,6 +267,47 @@ function generateDomainFallback(
   dbData: DBContext
 ): any {
   const query = userMessage.toLowerCase();
+  const isTamil = locale === "ta";
+
+  // 0. Strict Agriculture-Only Filter: Politely decline completely unrelated topics
+  const nonAgriKeywords = [
+    "movie", "cinema", "cricket", "football", "song", "actor", "actress",
+    "joke", "code", "python", "javascript", "react", "html", "css", "c++", "java",
+    "game", "gaming", "politician", "election", "celebrity", "crypto", "bitcoin",
+    "formula", "physics", "chemistry equation", "box office", "padam", "trailer",
+    "பாடல்", "திரைப்படம்", "நடிகர்", "கிரிக்கெட்", "விளையாட்டு", "அரசியல்"
+  ];
+
+  const containsNonAgri = nonAgriKeywords.some((kw) => query.includes(kw));
+  // Ensure it's not a mixed query that actually discusses agriculture
+  const hasAgriKeywords = [
+    "farm", "crop", "paddy", "soil", "pest", "fertilizer", "seed", "water",
+    "cultivat", "harvest", "field", "tractor", "mandi", "விவசாய", "பயிர்", "நெல்", "உரம்"
+  ].some((kw) => query.includes(kw));
+
+  if (containsNonAgri && !hasAgriKeywords) {
+    return {
+      topic: isTamil ? "விவசாய ஆலோசனை மட்டுமே" : "Agriculture Scope Only",
+      answer: isTamil
+        ? "வணக்கம்! அக்ரிபிரிட்ஜ் (AgriVoice) AI உதவியாளர் விவசாயம், பயிர் சாகுபடி, பூச்சி-நோய் மேலாண்மை, உரம், பாசனம், அரசு நலத்திட்டங்கள் மற்றும் சந்தை விலைகளுக்கு மட்டுமே பிரத்யேகமாக வழிகாட்ட வடிவமைக்கப்பட்டுள்ளது. பிற துறைகள் சார்ந்த வினாக்களுக்கு என்னால் பதிலளிக்க இயலாது. உங்கள் விவசாயம் மற்றும் பண்ணை சார்ந்த கேள்விகளை தயவுசெய்து கேளுங்கள்."
+        : "I am AgriVoice, an assistant dedicated exclusively to agriculture, farming, and agri-business. I can only assist with agricultural topics such as crop cultivation, pest and disease management, fertilizers, irrigation, weather advisories, farm machinery, agricultural finance, government schemes, and mandi market prices. Please feel free to ask any farming-related question!",
+      spokenText: isTamil
+        ? "மன்னிக்கவும். நான் விவசாயம் மற்றும் பண்ணை வழிகாட்டுதலுக்கு மட்டுமே பதிலளிக்க முடியும். தயவுசெய்து விவசாயம் சார்ந்த கேள்விகளைக் கேளுங்கள்."
+        : "I am exclusively an agricultural assistant. Please ask any farming-related question regarding crops, fertilizers, machinery, or mandi prices.",
+      sources: [
+        { title: "AgriBridge Agricultural Advisory Protocol", organization: "AgriBridge Ecosystem Governance" },
+        { title: "TNAU Agritech Extension Advisory", organization: "Tamil Nadu Agricultural University" },
+      ],
+      clarifyingQuestion: isTamil
+        ? "உங்கள் பண்ணை திட்டம் அல்லது பயிர் பாதுகாப்பு குறித்து நான் உதவட்டுமா?"
+        : "Would you like advice on crop selection, pest control, or current mandi prices?",
+      suggestedFollowUps: isTamil
+        ? ["நெல் தண்டு துளைப்பான் கட்டுப்பாடு", "குறுவை நெல் உர அட்டவணை", "உழவன் செயலி அரசு திட்டங்கள்", "மண்டி நெல் கொள்முதல் விலை"]
+        : ["Paddy stem borer IPM control", "Kuruvai fertilizer dosage schedule", "Uzhavan App government subsidies", "Current paddy procurement price"],
+      youtubeSearchQuery: "TNAU agriculture cultivation guide Tamil Nadu",
+      provider: "knowledge-base",
+    };
+  }
 
   // 1. Check for Investment & Agricultural Finance Intent
   if (
@@ -405,7 +452,6 @@ function generateDomainFallback(
   }
 
   // 5. Default General Agriculture Guidance
-  const isTamil = locale === "ta";
   return {
     topic: isTamil ? "வேளாண் ஆலோசனை" : "Agricultural Guidance",
     answer: isTamil
